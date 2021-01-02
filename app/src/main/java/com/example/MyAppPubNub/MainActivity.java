@@ -1,4 +1,5 @@
 package com.example.MyAppPubNub;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -13,6 +14,7 @@ import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.util.SparseArray;
@@ -27,18 +29,25 @@ import java.util.Map;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
-    final static String TAG ="MainActivity";
+    final static String TAG = "MainActivity";
+
+    // required variable for program
     String buttonStatus = "Start Scanner";
     boolean enabledScanner = false;
+    boolean isScanning = false;
+    boolean isHandlerStillRunning = false;
+    final int intervalToScan = 5000; // 5s
+    ScanSettings mScanSettings;
+    ScanFilter mScanFilter;
+    Handler mBluetoothScannerHandler = new Handler();
+
+    // Reference to UI elements
     Button start;
     TextView textView;
 
+    // Bluetooth Adapter and scanner
     BluetoothAdapter mBluetoothAdapter;
     BluetoothLeScanner mBluetoothLeScanner;
-    ScanSettings mScanSettings;
-    ScanFilter mScanFilter;
-
-    String string = "";
 
 
     @Override
@@ -54,78 +63,83 @@ public class MainActivity extends AppCompatActivity {
         // UI
         start = (Button) findViewById(R.id.start);
         textView = (TextView) findViewById(R.id.textView);
-
         start.setText(buttonStatus);
 
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        if (!mBluetoothAdapter.isEnabled()) {
+            start.setClickable(false);
+            textView.setText("Enable your bluetooth first");
         }
 
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)!=PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
-        }
 
-        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)!=PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 1);
-        }
-    }
-
-    public void onClick(View view){
-        Log.i(TAG, "Click on the " +buttonStatus +" button");
-        if (enabledScanner) {
-            enabledScanner = false;
-            mBluetoothLeScanner.stopScan(stoppedScanner);
-            buttonStatus = "Start Scanner";
-            start.setText(buttonStatus);
-            textView.setText("Scanner stopped :)");
-        }else{
-            buttonStatus = "Disable the scanner";
-            enabledScanner = true;
-            start.setText(buttonStatus);
-            try {
-                mBluetoothLeScanner.startScan(mScanCallback);
-            } catch (IllegalArgumentException error) {
-                enabledScanner = false;
-                buttonStatus = "Start Scanner";
-                start.setText(buttonStatus);
-                mBluetoothLeScanner.startScan(mScanCallback);
-                textView.setText("Sorry we have some trouble we couldn't start, please try again.");
-                Log.e(TAG, "Threw exception because the arguments are null, so please fix this issue");
+        start.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Log.i(TAG, "Click on the " + buttonStatus + " button");
+                if (enabledScanner) {
+                    enabledScanner = false;
+                    buttonStatus = "Start Scanner";
+                    start.setText(buttonStatus);
+                    textView.setText("Scanner stopped :)");
+                } else {
+                    if (mBluetoothAdapter.isEnabled()) {
+                        buttonStatus = "Disable the scanner";
+                        enabledScanner = true;
+                        start.setText(buttonStatus);
+                        try {
+                            if (!isHandlerStillRunning) {
+                                // If the handler is stopped we can start it again
+                                isHandlerStillRunning = true;
+                                mBluetoothScannerHandler.post(mBluetoothRunnable);
+                            }
+                        } catch (IllegalArgumentException error) {
+                            enabledScanner = false;
+                            buttonStatus = "Start Scanner";
+                            start.setText(buttonStatus);
+                            textView.setText("Sorry we have some trouble we couldn't start, please try again.");
+                            Log.e(TAG, "Threw exception because the arguments are null, so please fix this issue");
+                        }
+                    }
+                }
             }
+        });
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 1);
         }
     }
 
     protected ScanCallback mScanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
-            Log.i(TAG, "Starting the scanner");
+            super.onScanResult(callbackType, result);
             ScanRecord mScanRecord = result.getScanRecord();
             Iterator<Map.Entry<ParcelUuid, byte[]>> iterator = mScanRecord.getServiceData().entrySet().iterator();
-            Log.d(TAG, "//////////////////////////////////////////////");
-            Log.d(TAG, "Received data [" + mScanRecord.getServiceData().size() + "]");
-            while (iterator.hasNext()) {
-                Map.Entry<ParcelUuid, byte[]> entry = iterator.next();
-                Log.d(TAG, entry.getKey().toString() + ":" + entry.getValue());
-            }
-            Log.d(TAG, "End Received data");
-            Log.d(TAG, "//////////////////////////////////////////////");
+            Log.d(TAG, result.toString());
             SparseArray<byte[]> manufacturerData = mScanRecord.getManufacturerSpecificData();
             int mRssi = result.getRssi();
             Log.i(TAG, "Received data");
             Log.i(TAG, manufacturerData.toString());
 
-            if(manufacturerData.size()>0) {
-                for(int i = 0; i < manufacturerData.size(); i++) {
+            if (manufacturerData.size() > 0) {
+                for (int i = 0; i < manufacturerData.size(); i++) {
                     Log.i(TAG, "data is");
 
                     int key = manufacturerData.keyAt(i);
                     byte[] obj = manufacturerData.get(key);
 
-                    string = "";
+                    String string = "";
 
                     Log.i(TAG, "Payload length: " + obj.length);
 
-                    for(byte part : obj){
+                    for (byte part : obj) {
                         string = string + String.valueOf(part) + "  ";
                     }
 
@@ -137,6 +151,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void onScanFailed(int errorCode) {
+            super.onScanFailed(errorCode);
             Log.e(TAG, "Scan faild");
             enabledScanner = false;
             buttonStatus = "Start Scanner";
@@ -147,26 +162,14 @@ public class MainActivity extends AppCompatActivity {
 
     };
 
-    private ScanCallback stoppedScanner = new ScanCallback() {
-        @Override
-        public void onScanResult(int callbackType, ScanResult result) {
-            super.onScanResult(callbackType, result);
-            Log.i(TAG, "Scanner ended");
-        }
-
-        @Override
-        public void onScanFailed(int errorCode) {
-            super.onScanFailed(errorCode);
-            Log.e(TAG, "faild to stop the scanner");
-        }
-    };
 
     private void setScanSettings() {
         ScanSettings.Builder mBuilder = new ScanSettings.Builder();
         mBuilder.setReportDelay(0);
         mBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
         mScanSettings = mBuilder.build();
-    };
+    }
+
 
     private void setScanFilter() {
         /*
@@ -186,32 +189,40 @@ public class MainActivity extends AppCompatActivity {
         mScanFilter = mBuilder.build();
         /
          */
+    }
+
+    private final Runnable mBluetoothRunnable = new Runnable() {
+        @Override
+        public void run() {
+            boolean continueAfter = true;
+            if (isScanning) {
+                Log.d(TAG, "Stop scanner");
+                // The process still scanning
+                mBluetoothLeScanner.stopScan(mScanCallback);
+                isScanning = false;
+            } else {
+                Log.d(TAG, "Starting scanner again");
+                isScanning = true;
+                // The scanner is off
+                if (enabledScanner) {
+                    // Verify if the scanner still have authorisation to scan
+
+                    if (mBluetoothAdapter.isEnabled()) {
+                        mBluetoothLeScanner.startScan(null, mScanSettings,mScanCallback);
+                    } else {
+                        // Bluetooth adapter is off
+                        continueAfter = false;
+                        Log.e(TAG, "The bluetooth is off, so we can't continue scanning");
+                    }
+                }
+            }
+
+            // Make another call to this function after interval of time
+            if (enabledScanner && continueAfter) {
+                mBluetoothScannerHandler.postDelayed(this, intervalToScan);
+            } else {
+                isHandlerStillRunning = false;
+            }
+        }
     };
-
-    public double calculateDistance(int txPower, double rssi) {
-        if (rssi == 0) {
-            return -1.0; // if we cannot determine accuracy, return -1.
-        }
-        double ratio = rssi*1.0/txPower;
-        if (ratio < 1.0) {
-            return Math.pow(ratio,10);
-        }
-        else {
-            double accuracy =  (0.89976)*Math.pow(ratio,7.7095) + 0.111;
-            return accuracy;
-        }
-    }
-
-
-    private String getDistance(double accuracy) {
-        if (accuracy == -1.0) {
-            return "Unknown";
-        } else if (accuracy < 1) {
-            return "Immediate";
-        } else if (accuracy < 3) {
-            return "Near";
-        } else {
-            return "Far";
-        }
-    }
 }
