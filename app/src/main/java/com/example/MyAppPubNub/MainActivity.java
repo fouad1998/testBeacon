@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
                     int key = manufacturerData.keyAt(i);
                     byte[] obj = manufacturerData.get(key);
                     byte[] uuid = new byte[16];
-                    System.arraycopy(obj, 0           , uuid, 0     , uuid.length);
+                    System.arraycopy(obj, 2           , uuid, 0     , uuid.length);
 
                     textView.setText("UUID OF BEACON IS: " + Utils.bytesToHex(uuid));
                 }
