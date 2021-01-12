@@ -1,5 +1,7 @@
 package com.example.MyAppPubNub;
 
+import androidx.annotation.RequiresApi;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -12,7 +14,9 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.ParcelUuid;
@@ -25,6 +29,7 @@ import android.widget.TextView;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -103,6 +108,24 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle("This app needs location access");
+                builder.setMessage("Please grant location access so this app can detect peripherals.");
+                builder.setPositiveButton(android.R.string.ok, null);
+                builder.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    @RequiresApi(api = Build.VERSION_CODES.M)
+                    @Override
+                    public void onDismiss(DialogInterface dialog) {
+                        requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
+                    }
+                });
+                builder.show();
+            }
+        }
+
+        /*
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
@@ -114,14 +137,15 @@ public class MainActivity extends AppCompatActivity {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, 1);
         }
+
+         */
     }
 
-    protected ScanCallback mScanCallback = new ScanCallback() {
+    private final ScanCallback mScanCallback = new ScanCallback() {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
             ScanRecord mScanRecord = result.getScanRecord();
-            Iterator<Map.Entry<ParcelUuid, byte[]>> iterator = mScanRecord.getServiceData().entrySet().iterator();
             Log.d(TAG, result.toString());
             SparseArray<byte[]> manufacturerData = mScanRecord.getManufacturerSpecificData();
             int mRssi = result.getRssi();
@@ -134,20 +158,18 @@ public class MainActivity extends AppCompatActivity {
 
                     int key = manufacturerData.keyAt(i);
                     byte[] obj = manufacturerData.get(key);
+                    byte[] uuid = new byte[16];
+                    System.arraycopy(obj, 0           , uuid, 0     , uuid.length);
 
-                    String string = "";
-
-                    Log.i(TAG, "Payload length: " + obj.length);
-
-                    for (byte part : obj) {
-                        string = string + String.valueOf(part) + "  ";
-                    }
-
-                    textView.setText(string);
-                    Log.i(TAG, string);
-
+                    textView.setText("UUID OF BEACON IS: " + Utils.bytesToHex(uuid));
                 }
             }
+        }
+
+        @Override
+        public void onBatchScanResults(List<ScanResult> results) {
+            super.onBatchScanResults(results);
+            Log.d(TAG, "Started the on BatchScan");
         }
 
         public void onScanFailed(int errorCode) {
@@ -158,8 +180,6 @@ public class MainActivity extends AppCompatActivity {
             start.setText(buttonStatus);
             textView.setText("The scan faild, and it returns the code error: " + errorCode);
         }
-
-
     };
 
 
@@ -208,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
                     // Verify if the scanner still have authorisation to scan
 
                     if (mBluetoothAdapter.isEnabled()) {
-                        mBluetoothLeScanner.startScan(null, mScanSettings,mScanCallback);
+                        mBluetoothLeScanner.startScan(mScanCallback);
                     } else {
                         // Bluetooth adapter is off
                         continueAfter = false;
