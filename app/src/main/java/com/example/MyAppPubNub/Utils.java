@@ -30,6 +30,20 @@ public class Utils {
         }
     }
 
+    public static  String getMinorOrMajor(byte[] source) {
+       if(source.length != 2) {
+           // We need only two byte, no more no less
+           return "-1";
+       }
+
+       int first = (int) source[0];
+       int second = (int) source[1];
+
+       first = first << 8;
+
+       return new Integer(first + second).toString();
+    }
+
     public  static  String getDistance(double accuracy) {
         if (accuracy == -1.0) {
             return "Unknown";

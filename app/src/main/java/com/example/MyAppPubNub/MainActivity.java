@@ -51,17 +51,15 @@ public class MainActivity extends AppCompatActivity {
     TextView textView;
 
     // Bluetooth Adapter and scanner
-    BluetoothAdapter mBluetoothAdapter;
-    BluetoothLeScanner mBluetoothLeScanner;
+    BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+    BluetoothLeScanner mBluetoothLeScanner= mBluetoothAdapter.getBluetoothLeScanner();
+
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
 
         setScanSettings();
 
@@ -83,13 +81,12 @@ public class MainActivity extends AppCompatActivity {
                 if (enabledScanner) {
                     enabledScanner = false;
                     buttonStatus = "Start Scanner";
-                    start.setText(buttonStatus);
                     textView.setText("Scanner stopped :)");
                 } else {
+                    ensureBluetoothInstance();
                     if (mBluetoothAdapter.isEnabled()) {
                         buttonStatus = "Disable the scanner";
                         enabledScanner = true;
-                        start.setText(buttonStatus);
                         try {
                             if (!isHandlerStillRunning) {
                                 // If the handler is stopped we can start it again
@@ -99,16 +96,17 @@ public class MainActivity extends AppCompatActivity {
                         } catch (IllegalArgumentException error) {
                             enabledScanner = false;
                             buttonStatus = "Start Scanner";
-                            start.setText(buttonStatus);
                             textView.setText("Sorry we have some trouble we couldn't start, please try again.");
                             Log.e(TAG, "Threw exception because the arguments are null, so please fix this issue");
                         }
                     }
                 }
+                start.setText(buttonStatus);
             }
         });
 
         if (Build.VERSION.SDK_INT >= 23) {
+            // Ensure the permission are satisfied
             if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
                 final AlertDialog.Builder builder = new AlertDialog.Builder(this);
                 builder.setTitle("This app needs location access");
@@ -153,16 +151,26 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, manufacturerData.toString());
 
             if (manufacturerData.size() > 0) {
+                String template = "\n###################\nBEACON UUID: {{uuid}}\nMajor: {{major}}\nMinor: {{minor}}";
+                String textContent = "";
+
                 for (int i = 0; i < manufacturerData.size(); i++) {
                     Log.i(TAG, "data is");
-
                     int key = manufacturerData.keyAt(i);
                     byte[] obj = manufacturerData.get(key);
                     byte[] uuid = new byte[16];
-                    System.arraycopy(obj, 2           , uuid, 0     , uuid.length);
+                    byte[] major = new byte[2];
+                    byte[] minor = new byte[2];
 
-                    textView.setText("UUID OF BEACON IS: " + Utils.bytesToHex(uuid));
+                    System.arraycopy(obj, 2           , uuid, 0     , uuid.length);
+                    System.arraycopy(obj, 18           , major, 0     , major.length);
+                    System.arraycopy(obj, 20           , minor, 0     , minor.length);
+
+                    textContent += template.replace("{{uuid}}", Utils.bytesToHex(uuid)).replace("{{major}}", Utils.getMinorOrMajor(major)).replace("{{minor}}", Utils.getMinorOrMajor(minor));
                 }
+
+                textView.setText(textContent);
+
             }
         }
 
@@ -211,23 +219,39 @@ public class MainActivity extends AppCompatActivity {
          */
     }
 
+    private void ensureBluetoothInstance() {
+        if (mBluetoothAdapter == null) {
+            mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        }
+
+        if (mBluetoothLeScanner == null){
+             mBluetoothLeScanner= mBluetoothAdapter.getBluetoothLeScanner();
+        }
+    }
+
     private final Runnable mBluetoothRunnable = new Runnable() {
         @Override
         public void run() {
             boolean continueAfter = true;
+
             if (isScanning) {
                 Log.d(TAG, "Stop scanner");
+                isScanning = false;
+                ensureBluetoothInstance();
                 // The process still scanning
                 mBluetoothLeScanner.stopScan(mScanCallback);
-                isScanning = false;
+                // Check if the scanner is still enabled
+                if (!enabledScanner) {
+                    continueAfter = false;
+                }
             } else {
                 Log.d(TAG, "Starting scanner again");
                 isScanning = true;
-                // The scanner is off
+                // Is the scanner ON
                 if (enabledScanner) {
-                    // Verify if the scanner still have authorisation to scan
-
+                    // Verify if the bluetooth still on
                     if (mBluetoothAdapter.isEnabled()) {
+                        ensureBluetoothInstance();
                         mBluetoothLeScanner.startScan(mScanCallback);
                     } else {
                         // Bluetooth adapter is off
