@@ -52,8 +52,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Bluetooth Adapter and scanner
     BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-    BluetoothLeScanner mBluetoothLeScanner= mBluetoothAdapter.getBluetoothLeScanner();
-
+    BluetoothLeScanner mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
 
 
     @Override
@@ -151,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, manufacturerData.toString());
 
             if (manufacturerData.size() > 0) {
-                String template = "\n###################\nBEACON UUID: {{uuid}}\nMajor: {{major}}\nMinor: {{minor}}";
+                String template = "\nBEACON UUID: {{uuid}}\nMajor: {{major}}\nMinor: {{minor}}\ndistance: {{distance}}";
                 String textContent = "";
 
                 for (int i = 0; i < manufacturerData.size(); i++) {
@@ -161,16 +160,30 @@ public class MainActivity extends AppCompatActivity {
                     byte[] uuid = new byte[16];
                     byte[] major = new byte[2];
                     byte[] minor = new byte[2];
+                    byte[] powerX = new byte[1];
 
-                    System.arraycopy(obj, 2           , uuid, 0     , uuid.length);
-                    System.arraycopy(obj, 18           , major, 0     , major.length);
-                    System.arraycopy(obj, 20           , minor, 0     , minor.length);
+                    Log.e(TAG, String.valueOf(obj.length));
+                    try {
+                        System.arraycopy(obj, 2, uuid, 0, uuid.length);
+                        System.arraycopy(obj, 18, major, 0, major.length);
+                        System.arraycopy(obj, 20, minor, 0, minor.length);
+                        System.arraycopy(obj, 22, powerX, 0, powerX.length);
 
-                    textContent += template.replace("{{uuid}}", Utils.bytesToHex(uuid)).replace("{{major}}", Utils.getMinorOrMajor(major)).replace("{{minor}}", Utils.getMinorOrMajor(minor));
+                        int powerXValue = Utils.getPower(powerX);
+                        int minorValue = Utils.getMinorOrMajor(minor);
+                        int majorValue = Utils.getMinorOrMajor(major);
+                        double distance = Utils.calculateDistance((int) powerXValue, (double) mRssi);
+
+                        textContent += template.replace("{{uuid}}", Utils.bytesToHex(uuid))
+                                .replace("{{major}}", new Integer(majorValue).toString())
+                                .replace("{{minor}}", new Integer(minorValue).toString())
+                                .replace("{{distance}}", new Double(distance).toString() + "m");
+                    } catch (ArrayIndexOutOfBoundsException e) {
+                        Log.e(TAG, e.toString());
+                    }
                 }
 
                 textView.setText(textContent);
-
             }
         }
 
@@ -224,8 +237,8 @@ public class MainActivity extends AppCompatActivity {
             mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         }
 
-        if (mBluetoothLeScanner == null){
-             mBluetoothLeScanner= mBluetoothAdapter.getBluetoothLeScanner();
+        if (mBluetoothLeScanner == null) {
+            mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
         }
     }
 

@@ -30,18 +30,30 @@ public class Utils {
         }
     }
 
-    public static  String getMinorOrMajor(byte[] source) {
+    public static  int getMinorOrMajor(byte[] source) {
        if(source.length != 2) {
            // We need only two byte, no more no less
-           return "-1";
+           return -1;
        }
 
-       int first = (int) source[0];
-       int second = (int) source[1];
+       int first = Utils.getUnsigned((int) source[0]);
+       int second = Utils.getUnsigned((int) source[1]);
 
        first = first << 8;
 
-       return new Integer(first + second).toString();
+       return  first + second;
+    }
+
+    public static int getPower(byte[] source) {
+        if (source.length != 1) {
+            return -10000;
+        }
+
+        return (int) source[0];
+    }
+
+    public static int getUnsigned(int signed) {
+        return signed >= 0 ? signed : (-1) * signed;
     }
 
     public  static  String getDistance(double accuracy) {
