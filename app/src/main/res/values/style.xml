@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<resources>
+    <style name="MyActionBar">
+        <item name="android:background">#2D313D</item>
+    </style>
+</resources>
