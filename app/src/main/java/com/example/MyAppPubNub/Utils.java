@@ -37,11 +37,9 @@ public class Utils {
         }
 
         int first = Utils.getUnsigned((int) source[0]);
-        int second = Utils.getUnsigned((int) source[1]);
-
+        int second = Utils.getUnsigned((int) source[1] );
         first = first << 8;
-
-        return  first + second;
+        return  first  + second;
     }
 
     public static int getPower(byte[] source) {

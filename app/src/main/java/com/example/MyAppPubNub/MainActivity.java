@@ -4,16 +4,15 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat;
-
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
+import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -29,34 +28,34 @@ import android.provider.Settings;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ListView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     final static String TAG = "MainActivity";
-
-    private static final long SCAN_PERIOD = 10000;
-
+    private static final long SCAN_PERIOD = 2000;
     boolean isScanning = false;
     BluetoothAdapter mBluetoothAdapter;
     BluetoothLeScanner mBluetoothLeScanner;
     LocationManager locationManager;
     Handler handler;
     ListView listView;
-    ArrayList<String[]> beaconList ;
-    FloatingActionButton floatingActionButton ;
-    AnimatedVectorDrawableCompat avd ;
-    AnimatedVectorDrawable avd2 ;
-    boolean switchState ;
+    ArrayList<String[]> beaconList;
+    FloatingActionButton floatingActionButton;
+    AnimatedVectorDrawableCompat avd;
+    AnimatedVectorDrawable avd2;
+    boolean switchState;
     SparseArray<byte[]> manufacturerData;
-
-
-
+    ScanFilter mScanFilter;
+    ScanSettings mScanSettings;
+    int counter = 0;
+    Handler scanHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,53 +73,44 @@ public class MainActivity extends AppCompatActivity {
         switchState = true;
         floatingActionButton = (FloatingActionButton) findViewById(R.id.floatingActionButton);
         floatingActionButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4287F5")));
-
+        setScanFilter();
+        setScanSettings();
+        scanHandler = new Handler();
 
         if (Build.VERSION.SDK_INT >= 23) {
-
-            if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)!= PackageManager.PERMISSION_GRANTED ){
-                ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
-
         }
-
-
 
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED ){
-                    if(mBluetoothAdapter.isEnabled()){
-                        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)){
-                            if(!isScanning){
-                                mBluetoothLeScanner.startScan(mScanCallback);
+                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    if (mBluetoothAdapter.isEnabled()) {
+                        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                            if (!isScanning) {
+                                mBluetoothLeScanner.startScan(Arrays.asList(mScanFilter), mScanSettings, mScanCallback);
                                 isScanning = true;
-
                                 floatingActionButton.setImageDrawable(getResources().getDrawable(R.drawable.avd_play_to_pause));
                                 Drawable drawable = floatingActionButton.getDrawable();
                                 floatingActionButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#DA2D21")));
-                                if(drawable instanceof AnimatedVectorDrawableCompat){
-                                    avd = (AnimatedVectorDrawableCompat) drawable ;
+                                if (drawable instanceof AnimatedVectorDrawableCompat) {
+                                    avd = (AnimatedVectorDrawableCompat) drawable;
                                     avd.start();
-                                }else if(drawable instanceof AnimatedVectorDrawable){
-                                    avd2 = (AnimatedVectorDrawable) drawable ;
+                                } else if (drawable instanceof AnimatedVectorDrawable) {
+                                    avd2 = (AnimatedVectorDrawable) drawable;
                                     avd2.start();
                                 }
-
                                 // Stops scanning after a pre-defined scan period.
                                 /** handler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
+                                @Override public void run() {
                                 isScanning = false;
                                 mBluetoothLeScanner.stopScan(mScanCallback);
-                                start.setText("Stopped");
-
-
                                 }
                                 }, SCAN_PERIOD);**/
-                            }else{
+
+                            } else {
                                 mBluetoothLeScanner.stopScan(mScanCallback);
                                 isScanning = false;
 
@@ -128,16 +118,15 @@ public class MainActivity extends AppCompatActivity {
                                 Drawable drawable = floatingActionButton.getDrawable();
                                 floatingActionButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4287F5")));
 
-                                if(drawable instanceof AnimatedVectorDrawableCompat){
-                                    avd = (AnimatedVectorDrawableCompat) drawable ;
+                                if (drawable instanceof AnimatedVectorDrawableCompat) {
+                                    avd = (AnimatedVectorDrawableCompat) drawable;
                                     avd.start();
-                                }else if(drawable instanceof AnimatedVectorDrawable){
-                                    avd2 = (AnimatedVectorDrawable) drawable ;
+                                } else if (drawable instanceof AnimatedVectorDrawable) {
+                                    avd2 = (AnimatedVectorDrawable) drawable;
                                     avd2.start();
                                 }
-
                             }
-                        }else{
+                        } else {
                             AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.this);
                             alertDialog.setTitle("GPS setting!");
                             alertDialog.setMessage("You have to enable your GPS!");
@@ -155,95 +144,79 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             });
                             alertDialog.show();
-
                         }
-
-                    }else{
+                    } else {
                         Intent i = new Intent(mBluetoothAdapter.ACTION_REQUEST_ENABLE);
                         startActivity(i);
                     }
-
-
-
-
-
-                }else {
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-
-
+                } else {
+                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
                 }
-
-
-
-
-
             }
         });
-
     }
 
+    private void setScanFilter() {
+        ScanFilter.Builder mBuilder = new ScanFilter.Builder();
+        mScanFilter = mBuilder.build();
+    }
 
+    private void setScanSettings() {
+        ScanSettings.Builder mBuilder = new ScanSettings.Builder();
+        mBuilder.setReportDelay(SCAN_PERIOD);
+        mBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
+        mScanSettings = mBuilder.build();
+    }
 
     protected ScanCallback mScanCallback = new ScanCallback() {
-        @Override
-        public void onScanResult(int callbackType, ScanResult result) {
-            super.onScanResult(callbackType, result);
-            try {
-                ScanRecord mScanRecord = result.getScanRecord();
 
-                manufacturerData = mScanRecord.getManufacturerSpecificData();
-                int mRsi = result.getRssi();
-                beaconList.clear();
+        public void onBatchScanResults(List<ScanResult> results) {
+            super.onBatchScanResults(results);
+            beaconList.clear();
 
-                if (manufacturerData.size() > 0) {
+            for (int j = 0; j < results.size(); j++) {
+                try {
 
-                    for (int i = 0; i < manufacturerData.size(); i++) {
-                        int key = manufacturerData.keyAt(i);
-                        byte[] obj = manufacturerData.get(key);
-                        byte[] uuid = new byte[16];
-                        byte[] major = new byte[2];
-                        byte[] minor = new byte[2];
-                        byte[] powerX = new byte[1];
+                    counter = counter + 1;
+                    ScanRecord mScanRecord = results.get(j).getScanRecord();
+                    manufacturerData = mScanRecord.getManufacturerSpecificData();
+                    int mRsi = results.get(j).getRssi();
 
+                    if (manufacturerData.size() > 0) {
+                        for (int i = 0; i < manufacturerData.size(); i++) {
+                            int key = manufacturerData.keyAt(i);
+                            byte[] obj = manufacturerData.get(key);
+                            byte[] uuid = new byte[16];
+                            byte[] major = new byte[2];
+                            byte[] minor = new byte[2];
+                            byte[] powerX = new byte[1];
 
-                            System.arraycopy(obj, 2, uuid, 0, uuid.length);
-                            System.arraycopy(obj, 18, major, 0, major.length);
-                            System.arraycopy(obj, 20, minor, 0, minor.length);
-                            System.arraycopy(obj, 22, powerX, 0, powerX.length);
+                            if (obj[0] == 2 && obj[1] == 21) {
+                                System.arraycopy(obj, 2, uuid, 0, uuid.length);
+                                System.arraycopy(obj, 18, major, 0, major.length);
+                                System.arraycopy(obj, 20, minor, 0, minor.length);
+                                System.arraycopy(obj, 22, powerX, 0, powerX.length);
+                                int powerXValue = Utils.getPower(powerX);
+                                int minorValue = Utils.getMinorOrMajor(minor);
+                                int majorValue = Utils.getMinorOrMajor(major);
+                                double distance = Utils.calculateDistance((int) powerXValue, (double) mRsi);
+                                beaconList.add(new String[]{Utils.bytesToHex(uuid), String.valueOf(majorValue), String.valueOf(minorValue), String.format("%.2f", distance)});
+                            }
+                        }
+                        //programAdapter = new ProgramAdapter(MainActivity.this, beaconList);
+                        //recyclerView.setAdapter(programAdapter);
 
-                            int powerXValue = Utils.getPower(powerX);
-                            int minorValue = Utils.getMinorOrMajor(minor);
-                            int majorValue = Utils.getMinorOrMajor(major);
-                            double distance = Utils.calculateDistance((int) powerXValue, (double) mRsi);
-
-                            beaconList.add(new String[]{Utils.bytesToHex(uuid),String.valueOf(majorValue),String.valueOf(minorValue),String.format("%.2f",distance)});
-
-
-
-
-
-
+                        ProgramAdapter whatever = new ProgramAdapter(MainActivity.this, beaconList);
+                        listView.setAdapter(whatever);
 
                     }
 
-
-                    //programAdapter = new ProgramAdapter(MainActivity.this, beaconList);
-                    //recyclerView.setAdapter(programAdapter);
-
-                    ProgramAdapter whatever = new ProgramAdapter(MainActivity.this, beaconList);
-                    listView.setAdapter(whatever);
-
+                } catch (Exception e) {
+                    Log.i("yacine", "yacine");
                 }
-
-            }catch(Exception e){
-
-                Log.i("yacine", "yacine");
             }
-
         }
     };
-
-
 }
 
 
