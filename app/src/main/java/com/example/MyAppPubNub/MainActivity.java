@@ -4,6 +4,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat;
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
@@ -92,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
                             if (!isScanning) {
                                 mBluetoothLeScanner.startScan(Arrays.asList(mScanFilter), mScanSettings, mScanCallback);
                                 isScanning = true;
-                                floatingActionButton.setImageDrawable(getResources().getDrawable(R.drawable.avd_play_to_pause));
+                                floatingActionButton.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.avd_play_to_pause, null));
                                 Drawable drawable = floatingActionButton.getDrawable();
                                 floatingActionButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#DA2D21")));
                                 if (drawable instanceof AnimatedVectorDrawableCompat) {
@@ -114,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
                                 mBluetoothLeScanner.stopScan(mScanCallback);
                                 isScanning = false;
 
-                                floatingActionButton.setImageDrawable(getResources().getDrawable(R.drawable.avd_pause_to_play));
+                                floatingActionButton.setImageDrawable(ResourcesCompat.getDrawable(getResources(), R.drawable.avd_pause_to_play, null));
                                 Drawable drawable = floatingActionButton.getDrawable();
                                 floatingActionButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4287F5")));
 
