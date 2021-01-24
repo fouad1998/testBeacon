@@ -36,8 +36,8 @@ public class Utils {
             return -1;
         }
 
-        int first = Utils.getUnsigned((int) source[0]);
-        int second = Utils.getUnsigned((int) source[1] );
+        int first = (int) (source[0] & 0xFF) ;
+        int second = (int) (source[1] & 0xFF) ;
         first = first << 8;
         return  first  + second;
     }
