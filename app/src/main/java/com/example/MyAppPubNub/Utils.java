@@ -17,11 +17,11 @@ public class Utils {
         return new String(hexChars);
     }
 
-    public static double calculateDistance(int txPower, double rssi) {
-        if (rssi == 0) {
+    public static double calculateDistance(int txPower, double rsi) {
+        if (rsi == 0) {
             return -1.0; // if we cannot determine accuracy, return -1.
         }
-        double ratio = rssi * 1.0 / txPower;
+        double ratio = rsi * 1.0 / txPower;
         if (ratio < 1.0) {
             return Math.pow(ratio, 10);
         } else {

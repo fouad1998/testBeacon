@@ -4,6 +4,7 @@ package com.example.MyAppPubNub;
 
 import android.app.Activity;
 import android.text.Layout;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,11 +41,29 @@ public class ProgramAdapter extends ArrayAdapter{
 
 
         //this code sets the values of the objects to values from the arrays
-        String[] beacon = beaconList.get(position);
-        uuid.setText(beacon[0]);
-        major.setText(beacon[1]);
-        minor.setText(beacon[2]);
-        distance.setText(beacon[3]);
+        try{
+            String[] beacon = beaconList.get(position);
+            if(beacon[beacon.length-1] == "eddystoneuid"){
+                uuid.setText(beacon[0]);
+                distance.setText(beacon[1]);
+
+
+            }else if(beacon[beacon.length-1] == "eddystoneurl"){
+                uuid.setText(beacon[0]);
+                distance.setText(beacon[1]);
+
+            }else if(beacon[beacon.length-1] == "ibeacon"){
+                uuid.setText(beacon[0]);
+                major.setText(beacon[1]);
+                minor.setText(beacon[2]);
+                distance.setText(beacon[3]);
+
+            }
+
+        }catch (Exception e){
+            Log.i("ereurrrr",e.toString())  ;
+        }
+
 
 
 

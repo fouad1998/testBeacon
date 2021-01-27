@@ -25,22 +25,26 @@ import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.ParcelUuid;
 import android.provider.Settings;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
     final static String TAG = "MainActivity";
-    private static final long SCAN_PERIOD = 2000;
+    private static final long SCAN_PERIOD = 1500;
     boolean isScanning = false;
     BluetoothAdapter mBluetoothAdapter;
     BluetoothLeScanner mBluetoothLeScanner;
@@ -57,6 +61,12 @@ public class MainActivity extends AppCompatActivity {
     ScanSettings mScanSettings;
     int counter = 0;
     Handler scanHandler;
+    ParcelUuid serviceUid = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb");
+    String[] urlSchemePrefix;
+    String[] topLevelDomain;
+    TextView beaconTitle;
+    TextView majorText;
+    TextView minorText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +87,13 @@ public class MainActivity extends AppCompatActivity {
         setScanFilter();
         setScanSettings();
         scanHandler = new Handler();
+        beaconTitle = (TextView) findViewById(R.id.beaconTitle);
+        majorText = (TextView) findViewById(R.id.majorText);
+        minorText = (TextView) findViewById(R.id.minorText);
+
+        urlSchemePrefix = new String[]{"http://www.","https://www.","http://","https://"};
+        topLevelDomain = new String[]{".com/",".org/",".edu/",".net/",".info/",".biz/",".gov/",".com",".org",".edu",".net",".info","biz",".gov"};
+
 
         if (Build.VERSION.SDK_INT >= 23) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
@@ -165,28 +182,32 @@ public class MainActivity extends AppCompatActivity {
     private void setScanSettings() {
         ScanSettings.Builder mBuilder = new ScanSettings.Builder();
         mBuilder.setReportDelay(SCAN_PERIOD);
-        mBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY);
+        mBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
         mScanSettings = mBuilder.build();
     }
 
     protected ScanCallback mScanCallback = new ScanCallback() {
 
+        @Override
         public void onBatchScanResults(List<ScanResult> results) {
             super.onBatchScanResults(results);
             beaconList.clear();
-
             for (int j = 0; j < results.size(); j++) {
                 try {
+                    /**
 
                     counter = counter + 1;
                     ScanRecord mScanRecord = results.get(j).getScanRecord();
                     manufacturerData = mScanRecord.getManufacturerSpecificData();
+                    byte[] manufacturerData2 = mScanRecord.getManufacturerSpecificData(224);
+
                     int mRsi = results.get(j).getRssi();
 
                     if (manufacturerData.size() > 0) {
                         for (int i = 0; i < manufacturerData.size(); i++) {
                             int key = manufacturerData.keyAt(i);
                             byte[] obj = manufacturerData.get(key);
+                            Log.i("taille", Utils.bytesToHex(obj));
                             byte[] uuid = new byte[16];
                             byte[] major = new byte[2];
                             byte[] minor = new byte[2];
@@ -201,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
                                 int minorValue = Utils.getMinorOrMajor(minor);
                                 int majorValue = Utils.getMinorOrMajor(major);
                                 double distance = Utils.calculateDistance((int) powerXValue, (double) mRsi);
-                                beaconList.add(new String[]{Utils.bytesToHex(uuid), String.valueOf(majorValue), String.valueOf(minorValue), String.format("%.2f", distance)});
+                                beaconList.add(new String[]{Utils.bytesToHex(uuid), String.valueOf(majorValue), String.valueOf(minorValue), String.format("%.2f", distance),"ibeacon"});
                             }
                         }
                         //programAdapter = new ProgramAdapter(MainActivity.this, beaconList);
@@ -210,12 +231,103 @@ public class MainActivity extends AppCompatActivity {
                         ProgramAdapter whatever = new ProgramAdapter(MainActivity.this, beaconList);
                         listView.setAdapter(whatever);
 
+                     }**/
+
+                    ScanRecord mScanRecord = results.get(j).getScanRecord();
+                    Map<ParcelUuid, byte[]> myMap = mScanRecord.getServiceData();
+                    int mRsi = results.get(j).getRssi();
+                    String url = "";
+                    byte[] txPower = new byte[1];
+                    byte[] nameSpaceId = new byte[10];
+                    byte[] instanceId = new byte[6];
+                    double distance;
+                    Log.i("mybeacon", String.valueOf(results.size()));
+
+
+                    /**byte[] myMap = mScanRecord.getServiceData(serviceUid);
+
+                    if(myMap[0] == 16){
+                        url = url + urlSchemePrefix[myMap[2]];
+
+                        for(int i=3;i<myMap.length-1;i++){
+                            url = url + (char)myMap[i];
+                        }
+
+                        url = url + topLevelDomain[myMap[myMap.length-1]];
+                        txPower[0] = myMap[1];
+                        distance = Utils.calculateDistance((int) txPower[0], (double) mRsi);
+
+                        beaconList.add(new String[]{"URL" + url,
+                                String.format("%.2f", distance),
+                                "eddystoneurl"});
+
+                        beaconTitle.setText("EddyStone URL");
+                        majorText.setText(" ");
+                        minorText.setText(" ");
+
+                    } else if(myMap[0] == 0){
+
+                        System.arraycopy(myMap, 2, nameSpaceId, 0, nameSpaceId.length);
+                        System.arraycopy(myMap, 12, instanceId, 0, instanceId.length);
+                        System.arraycopy(myMap, 1, txPower, 0, txPower.length);
+
+                        distance = Utils.calculateDistance((int) txPower[0], (double) mRsi);
+
+                        beaconList.add(new String[]{"Name Space ID : " + Utils.bytesToHex(nameSpaceId)+ "\n" + "Instance ID :" + Utils.bytesToHex(instanceId),
+                                String.format("%.2f", distance),
+                                "eddystoneuid"});
+
+                        beaconTitle.setText("EddyStone UID");
+                        majorText.setText(" ");
+                        minorText.setText(" ");
+                    }**/
+
+                    for (Map.Entry<ParcelUuid, byte[]> eddystoneFrame : myMap.entrySet()) {
+
+                        if(eddystoneFrame.getValue()[0] == 16){
+                            url = url + urlSchemePrefix[eddystoneFrame.getValue()[2]];
+
+                            for(int i=3;i<eddystoneFrame.getValue().length-1;i++){
+                                url = url + (char)eddystoneFrame.getValue()[i];
+                            }
+
+                            url = url + topLevelDomain[eddystoneFrame.getValue()[eddystoneFrame.getValue().length-1]];
+                            txPower[0] = eddystoneFrame.getValue()[1];
+                            distance = Utils.calculateDistance((int) txPower[0], (double) mRsi);
+
+                            beaconList.add(new String[]{"URL" + url,
+                                    String.format("%.2f", distance),
+                                    "eddystoneurl"});
+
+                            beaconTitle.setText("EddyStone URL");
+                            majorText.setText(" ");
+                            minorText.setText(" ");
+
+                        } else if(eddystoneFrame.getValue()[0] == 0){
+
+                            System.arraycopy(eddystoneFrame.getValue(), 2, nameSpaceId, 0, nameSpaceId.length);
+                            System.arraycopy(eddystoneFrame.getValue(), 12, instanceId, 0, instanceId.length);
+                            System.arraycopy(eddystoneFrame.getValue(), 1, txPower, 0, txPower.length);
+
+                            distance = Utils.calculateDistance((int) txPower[0], (double) mRsi);
+
+                            beaconList.add(new String[]{"Name Space ID : " + Utils.bytesToHex(nameSpaceId)+ "\n" + "Instance ID :" + Utils.bytesToHex(instanceId),
+                                    String.format("%.2f", distance),
+                                    "eddystoneuid"});
+
+                            beaconTitle.setText("EddyStone UID");
+                            majorText.setText(" ");
+                            minorText.setText(" ");
+                        }
                     }
 
                 } catch (Exception e) {
-                    Log.i("yacine", "yacine");
+                    Log.e("Error123456789", e.toString());
+                    break;
                 }
             }
+            ProgramAdapter whatever = new ProgramAdapter(MainActivity.this, beaconList);
+            listView.setAdapter(whatever);
         }
     };
 }
