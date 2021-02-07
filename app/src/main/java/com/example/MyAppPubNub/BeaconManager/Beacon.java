@@ -33,4 +33,8 @@ public abstract class Beacon {
     public float getDistance() {
         return distance;
     }
+
+    public String toString() {
+        return "Beacon: uuid:" + uuid + ", distance: " +distance;
+    }
 }

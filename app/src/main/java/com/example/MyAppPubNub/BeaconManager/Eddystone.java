@@ -20,4 +20,9 @@ public class Eddystone extends Beacon {
     public String getInstanceID() {
         return instanceID;
     }
+
+    public String toString(){
+        return "Eddystone Beacon: namespace: " +getUuid()+", instanceid: " + instanceID + ", distance: " + getDistance();
+
+    }
 }
