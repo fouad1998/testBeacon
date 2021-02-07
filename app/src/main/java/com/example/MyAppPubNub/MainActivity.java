@@ -14,6 +14,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -70,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
     TextView instanceIdView;
     TextView instanceId;
     TextView distance;
+    Context myContext;
     List<Object> myListView;
 
     @Override
@@ -78,7 +80,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         this.setTitle("Beacon Detection");
-
 
         handler = new Handler();
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -101,7 +102,7 @@ public class MainActivity extends AppCompatActivity {
         distance = (TextView) findViewById(R.id.distance);
 
         try{
-            this.myScanner = new Scanner(instanceIdView, imageView);
+            this.myScanner = new Scanner(this, instanceIdView, imageView);
         }catch (Exception e) {
             Log.e(TAG, e.toString());
             System.exit(-1);
@@ -197,6 +198,10 @@ public class MainActivity extends AppCompatActivity {
         mBuilder.setReportDelay(SCAN_PERIOD);
         mBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
         mScanSettings = mBuilder.build();
+    }
+
+    public void settContext(Context c){
+        this.myContext = c;
     }
 }
 
