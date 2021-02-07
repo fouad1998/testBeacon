@@ -4,10 +4,7 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.widget.ImageView;
@@ -46,20 +43,9 @@ public class Scanner extends ScanCallback {
         myContext = context;
     }
 
-    public static Drawable LoadImageFromWebOperations(String url) {
-        try {
-            InputStream is = (InputStream) new URL(url).getContent();
-            Drawable d = Drawable.createFromStream(is, "src name");
-            return d;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-
     public void onBatchScanResults(List<ScanResult> results) {
         super.onBatchScanResults(results);
-        if (results.size() != 0) {
+
             for (int j = 0; j < results.size(); j++) {
                 try {
                     /**
@@ -190,14 +176,13 @@ public class Scanner extends ScanCallback {
                         }
                     }
 
-                    Beacon b = beaconManager.getNearset();
+                    Beacon b = beaconManager.getNearest();
                     if (b != null) {
                         myTextView.setText("name space is: " + b.getUuid() + ", distance: " + b.getDistance());
                         if(b.getUuid() == "33963772448957556609" ){
 
                             Glide.with(myContext).load("https://cdn-a.william-reed.com/var/wrbm_gb_food_pharma/storage/images/2/3/7/0/9310732-1-eng-GB/1NPD%20GALLERY%20(1)_news_large.png")
                                     .into(myImageView);
-
 
                         }
 
@@ -209,10 +194,7 @@ public class Scanner extends ScanCallback {
                     break;
                 }
             }
-        } else {
-            // Clean the beacons
-            myTextView.setText("No result for the moment :) !");
-        }
+
 
     }
 }

@@ -53,8 +53,6 @@ public class MainActivity extends AppCompatActivity {
     Scanner myScanner;
     LocationManager locationManager;
     Handler handler;
-    ListView listView;
-    ArrayList<String[]> beaconList;
     FloatingActionButton floatingActionButton;
     AnimatedVectorDrawableCompat avd;
     AnimatedVectorDrawable avd2;
@@ -65,11 +63,8 @@ public class MainActivity extends AppCompatActivity {
     int counter = 0;
     Handler scanHandler;
     ParcelUuid serviceUid = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb");
-    String[] urlSchemePrefix;
-    String[] topLevelDomain;
     ImageView imageView;
     TextView instanceIdView;
-    TextView instanceId;
     TextView distance;
     Context myContext;
     List<Object> myListView;
@@ -94,8 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
         imageView = (ImageView) findViewById(R.id.imageView);
         instanceIdView = (TextView) findViewById(R.id.instanceIdView);
-        instanceId = (TextView) findViewById(R.id.instanceId);
-        distance = (TextView) findViewById(R.id.distance);
+
 
         imageView = (ImageView) findViewById(R.id.imageView);
         instanceIdView = (TextView) findViewById(R.id.instanceIdView);
