@@ -6,13 +6,6 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <ListView
-        android:id="@+id/listView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="100dp"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/floatingActionButton"
         android:layout_width="wrap_content"
@@ -23,5 +16,43 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/avd_play_to_pause" />
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="399dp"
+        android:layout_height="346dp"
+        android:layout_marginStart="6dp"
+        android:layout_marginTop="6dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/instanceId"
+        tools:srcCompat="@tools:sample/avatars" />
+
+    <TextView
+        android:id="@+id/instanceIdView"
+        android:layout_width="356dp"
+        android:layout_height="26dp"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="7dp"
+        android:text="Name space ID:"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/instanceId"
+        android:layout_width="357dp"
+        android:layout_height="28dp"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="6dp"
+        android:text="Instance ID :"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/instanceIdView" />
+
+    <TextView
+        android:id="@+id/distance"
+        android:layout_width="246dp"
+        android:layout_height="57dp"
+        android:text="Distance:"
+        tools:layout_editor_absoluteX="75dp"
+        tools:layout_editor_absoluteY="436dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -30,6 +30,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -64,9 +65,13 @@ public class MainActivity extends AppCompatActivity {
     ParcelUuid serviceUid = ParcelUuid.fromString("0000feaa-0000-1000-8000-00805f9b34fb");
     String[] urlSchemePrefix;
     String[] topLevelDomain;
-    TextView beaconTitle;
-    TextView majorText;
-    TextView minorText;
+    ImageView imageView;
+    TextView instanceIdView;
+    TextView instanceId;
+    TextView distance;
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,16 +85,19 @@ public class MainActivity extends AppCompatActivity {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         mBluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        listView = (ListView) findViewById(R.id.listView);
         switchState = true;
         floatingActionButton = (FloatingActionButton) findViewById(R.id.floatingActionButton);
         floatingActionButton.setBackgroundTintList(ColorStateList.valueOf(Color.parseColor("#4287F5")));
         setScanFilter();
         setScanSettings();
         scanHandler = new Handler();
-        beaconTitle = (TextView) findViewById(R.id.beaconTitle);
-        majorText = (TextView) findViewById(R.id.majorText);
-        minorText = (TextView) findViewById(R.id.minorText);
+
+        imageView = (ImageView) findViewById(R.id.imageView);
+        instanceIdView = (TextView) findViewById(R.id.instanceIdView);
+        instanceId = (TextView) findViewById(R.id.instanceId);
+        distance = (TextView) findViewById(R.id.distance);
+
+
 
         urlSchemePrefix = new String[]{"http://www.","https://www.","http://","https://"};
         topLevelDomain = new String[]{".com/",".org/",".edu/",".net/",".info/",".biz/",".gov/",".com",".org",".edu",".net",".info","biz",".gov"};
@@ -243,7 +251,6 @@ public class MainActivity extends AppCompatActivity {
                     double distance;
                     Log.i("mybeacon", String.valueOf(results.size()));
 
-
                     /**byte[] myMap = mScanRecord.getServiceData(serviceUid);
 
                     if(myMap[0] == 16){
@@ -295,13 +302,12 @@ public class MainActivity extends AppCompatActivity {
                             txPower[0] = eddystoneFrame.getValue()[1];
                             distance = Utils.calculateDistance((int) txPower[0], (double) mRsi);
 
-                            beaconList.add(new String[]{"URL" + url,
+                            /**beaconList.add(new String[]{"URL" + url,
                                     String.format("%.2f", distance),
-                                    "eddystoneurl"});
+                                    "eddystoneurl"});**/
+                            BeaconManager.addEddyBeacon(nameSpaceId, instanceId);
 
-                            beaconTitle.setText("EddyStone URL");
-                            majorText.setText(" ");
-                            minorText.setText(" ");
+
 
                         } else if(eddystoneFrame.getValue()[0] == 0){
 
@@ -311,13 +317,13 @@ public class MainActivity extends AppCompatActivity {
 
                             distance = Utils.calculateDistance((int) txPower[0], (double) mRsi);
 
-                            beaconList.add(new String[]{"Name Space ID : " + Utils.bytesToHex(nameSpaceId)+ "\n" + "Instance ID :" + Utils.bytesToHex(instanceId),
+                          /**  beaconList.add(new String[]{"Name Space ID : " + Utils.bytesToHex(nameSpaceId)+ "\n" + "Instance ID :" + Utils.bytesToHex(instanceId),
                                     String.format("%.2f", distance),
-                                    "eddystoneuid"});
+                                    "eddystoneuid"});**/
+                            BeaconManager.addEddyBeacon(nameSpaceId, instanceId);
 
-                            beaconTitle.setText("EddyStone UID");
-                            majorText.setText(" ");
-                            minorText.setText(" ");
+
+
                         }
                     }
 
