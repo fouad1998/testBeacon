@@ -19,31 +19,43 @@
 
     <TextView
         android:id="@+id/instanceIdView"
-        android:layout_width="350dp"
-        android:layout_height="51dp"
-        android:layout_marginStart="28dp"
+        android:layout_width="358dp"
+        android:layout_height="102dp"
         android:layout_marginTop="7dp"
         android:text="Name space ID:"
+        android:textSize="30dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="64dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-    >
+        app:layout_constraintTop_toTopOf="@+id/instanceIdView">
 
         <ImageView
             android:id="@+id/imageView"
             android:layout_width="352dp"
-            android:layout_height="440dp"
+            android:layout_height="220dp"
             android:layout_marginStart="27dp"
             android:layout_marginTop="10dp"
+            android:visibility="invisible"
             app:layout_constraintStart_toStartOf="parent"
-            app:srcCompat="@drawable/ic_launcher_foreground"
-            />
+            app:srcCompat="@drawable/ic_launcher_foreground" />
+
+        <ImageView
+            android:id="@+id/imageView2"
+            android:layout_width="352dp"
+            android:layout_height="220dp"
+            android:layout_below="@id/imageView"
+            android:layout_marginStart="27dp"
+            android:layout_marginTop="10dp"
+            android:visibility="invisible"
+            app:layout_constraintStart_toStartOf="parent"
+            app:srcCompat="@drawable/ic_launcher_foreground" />
 
     </RelativeLayout>
 

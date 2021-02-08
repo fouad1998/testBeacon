@@ -47,7 +47,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     final static String TAG = "MainActivity";
-    private static final long SCAN_PERIOD = 1500;
+    private static final long SCAN_PERIOD = 1000;
     boolean isScanning = false;
     BluetoothAdapter mBluetoothAdapter;
     BluetoothLeScanner mBluetoothLeScanner;
@@ -93,11 +93,20 @@ public class MainActivity extends AppCompatActivity {
 
 
         imageView = (ImageView) findViewById(R.id.imageView);
+        ImageView imageView2 = (ImageView) findViewById(R.id.imageView2);
         instanceIdView = (TextView) findViewById(R.id.instanceIdView);
         distance = (TextView) findViewById(R.id.distance);
 
+        Glide.with(this)
+                .load("https://www.health.harvard.edu/media/content/images/cr/8c38e37d-e8b9-48dd-a9a8-65083a6115e5.jpg")
+                .into(imageView);
+
+        Glide.with(this).load("https://hips.hearstapps.com/hmg-prod.s3.amazonaws.com/images/easter-brunch-ideas-1610651416.jpg?crop=0.660xw:0.659xh;0.167xw,0.141xh&resize=480:*")
+                .into(imageView2);
+
+
         try{
-            this.myScanner = new Scanner(this, instanceIdView, imageView);
+            this.myScanner = new Scanner( instanceIdView, imageView, imageView2);
         }catch (Exception e) {
             Log.e(TAG, e.toString());
             System.exit(-1);
@@ -191,7 +200,8 @@ public class MainActivity extends AppCompatActivity {
     private void setScanSettings() {
         ScanSettings.Builder mBuilder = new ScanSettings.Builder();
         mBuilder.setReportDelay(SCAN_PERIOD);
-        mBuilder.setScanMode(ScanSettings.SCAN_MODE_LOW_POWER);
+        mBuilder.setScanMode(ScanSettings.MATCH_MODE_AGGRESSIVE);
+        mBuilder.setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT);
         mScanSettings = mBuilder.build();
     }
 

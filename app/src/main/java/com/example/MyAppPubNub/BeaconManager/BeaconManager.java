@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 public class BeaconManager {
     final static String TAG = "BeaconManager";
-    final int timeout = 50000;
+    final int timeout = 3000;
 
     private ArrayList<Beacon> beacons;
 
@@ -30,14 +30,8 @@ public class BeaconManager {
                 if (e.getUuid() == namespace && e.getInstanceID() == instanceID){
                     e.setDistance(distance);
                     isAllowedToAdd = false;
+                    break;
                 }
-            }
-
-            // Check if the beacon dead or not
-            if (now - b.getTimestamp() > timeout){
-                // The beacon in this case is dead
-                beacons.remove(index);
-                continue;
             }
            } catch (Exception e) {
                 Log.e(TAG, "Error on the beacon manager, error is: " + e.toString());
@@ -54,8 +48,7 @@ public class BeaconManager {
 
     public void addIBeacon(String uuid, int major, int minor, float distance) throws  Exception{
         boolean isAllowedToAdd = true;
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        long now = timestamp.getTime();
+
 
         for (int index  = 0; index < beacons.size();) {
             try {
@@ -67,14 +60,8 @@ public class BeaconManager {
                     if (i.getUuid() == uuid && i.getMajor() == major && i.getMinor() == minor){
                         i.setDistance(distance);
                         isAllowedToAdd = false;
+                        break;
                     }
-                }
-
-                // Check if the beacon dead or not
-                if (now - b.getTimestamp() > timeout){
-                    // The beacon in this case is dead
-                    beacons.remove(index);
-                    continue;
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error on the beacon manager, error is: " + e.toString());
@@ -105,5 +92,21 @@ public class BeaconManager {
         }
 
         return null;
+    }
+
+    public void clean(){
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        long now = timestamp.getTime();
+
+        for (int index  = 0; index < beacons.size();) {
+                Beacon b = this.beacons.get(index);
+
+                if (now - b.getTimestamp()> timeout){
+                    beacons.remove(index);
+                    continue;
+                }
+
+            ++index;
+        }
     }
 }
