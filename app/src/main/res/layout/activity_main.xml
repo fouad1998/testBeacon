@@ -23,7 +23,7 @@
         android:layout_height="102dp"
         android:layout_marginTop="7dp"
         android:text="Name space ID:"
-        android:textSize="30dp"
+        android:textSize="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

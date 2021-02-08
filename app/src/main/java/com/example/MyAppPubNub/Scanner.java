@@ -54,11 +54,27 @@ public class Scanner extends ScanCallback {
             try {
                 ScanRecord mScanRecord = results.get(index).getScanRecord();
                 byte[] iBeaconFrame = mScanRecord.getManufacturerSpecificData(76);
+                int mRsi = results.get(index).getRssi();
+
                 if (iBeaconFrame != null && iBeaconFrame.length != 0) {
-                    
+                    byte[] uuid = new byte[16];
+                    byte[] major = new byte[2];
+                    byte[] minor = new byte[2];
+                    byte[] powerX = new byte[1];
+
+                    if (iBeaconFrame[0] == 2 && iBeaconFrame[1] == 21) {
+                        System.arraycopy(iBeaconFrame, 2, uuid, 0, uuid.length);
+                        System.arraycopy(iBeaconFrame, 18, major, 0, major.length);
+                        System.arraycopy(iBeaconFrame, 20, minor, 0, minor.length);
+                        System.arraycopy(iBeaconFrame, 22, powerX, 0, powerX.length);
+                        int powerXValue = Utils.getPower(powerX);
+                        int minorValue = Utils.getMinorOrMajor(minor);
+                        int majorValue = Utils.getMinorOrMajor(major);
+                        double distance = Utils.calculateDistance((int) powerXValue, (double) mRsi);
+                        beaconManager.addIBeacon(Utils.bytesToHex(uuid),majorValue, minorValue, (float) distance);
+                    }
                 } else {
                     Map<ParcelUuid, byte[]> myMap = mScanRecord.getServiceData();
-                    int mRsi = results.get(index).getRssi();
                     String url = "";
                     byte[] txPower = new byte[1];
                     byte[] nameSpaceId = new byte[10];
@@ -116,7 +132,7 @@ public class Scanner extends ScanCallback {
 
         Beacon b = beaconManager.getNearest();
         if (b != null) {
-            myTextView.setText("name space is: " + b.getUuid() + ", distance: " + b.getDistance());
+            myTextView.setText(b.toString());
             if (b.getUuid().equals("33963772448957556609")) {
                 Log.i(TAG, "Same uuid");
                 myImageView.setVisibility(View.VISIBLE);
