@@ -47,88 +47,85 @@ public class Scanner extends ScanCallback {
 
     public void onBatchScanResults(List<ScanResult> results) {
         super.onBatchScanResults(results);
+    }
+
+    @Override
+    public void onScanResult(int callbackType, ScanResult result) {
+        super.onScanResult(callbackType, result);
         beaconManager.clean();
-        Log.i(TAG, "On batch called, size of result is : " + results.size());
+        Log.i(TAG, "Scan result called");
 
-        for (int index = 0; index < results.size(); ++index) {
-            try {
-                ScanRecord mScanRecord = results.get(index).getScanRecord();
-                byte[] iBeaconFrame = mScanRecord.getManufacturerSpecificData(76);
-                int mRsi = results.get(index).getRssi();
+        try {
+            ScanRecord mScanRecord = result.getScanRecord();
+            byte[] iBeaconFrame = mScanRecord.getManufacturerSpecificData(76);
+            int mRsi = result.getRssi();
 
-                if (iBeaconFrame != null && iBeaconFrame.length != 0) {
-                    byte[] uuid = new byte[16];
-                    byte[] major = new byte[2];
-                    byte[] minor = new byte[2];
-                    byte[] powerX = new byte[1];
+            if (iBeaconFrame != null && iBeaconFrame.length != 0) {
+                byte[] uuid = new byte[16];
+                byte[] major = new byte[2];
+                byte[] minor = new byte[2];
+                byte[] powerX = new byte[1];
 
-                    if (iBeaconFrame[0] == 2 && iBeaconFrame[1] == 21) {
-                        System.arraycopy(iBeaconFrame, 2, uuid, 0, uuid.length);
-                        System.arraycopy(iBeaconFrame, 18, major, 0, major.length);
-                        System.arraycopy(iBeaconFrame, 20, minor, 0, minor.length);
-                        System.arraycopy(iBeaconFrame, 22, powerX, 0, powerX.length);
-                        int powerXValue = Utils.getPower(powerX);
-                        int minorValue = Utils.getMinorOrMajor(minor);
-                        int majorValue = Utils.getMinorOrMajor(major);
-                        double distance = Utils.calculateDistance((int) powerXValue, (double) mRsi);
-                        beaconManager.addIBeacon(Utils.bytesToHex(uuid),majorValue, minorValue, (float) distance);
-                    }
-                } else {
-                    Map<ParcelUuid, byte[]> myMap = mScanRecord.getServiceData();
-                    String url = "";
-                    byte[] txPower = new byte[1];
-                    byte[] nameSpaceId = new byte[10];
-                    byte[] instanceId = new byte[6];
-                    float distance;
+                if (iBeaconFrame[0] == 2 && iBeaconFrame[1] == 21) {
+                    System.arraycopy(iBeaconFrame, 2, uuid, 0, uuid.length);
+                    System.arraycopy(iBeaconFrame, 18, major, 0, major.length);
+                    System.arraycopy(iBeaconFrame, 20, minor, 0, minor.length);
+                    System.arraycopy(iBeaconFrame, 22, powerX, 0, powerX.length);
+                    int powerXValue = Utils.getPower(powerX);
+                    int minorValue = Utils.getMinorOrMajor(minor);
+                    int majorValue = Utils.getMinorOrMajor(major);
+                    double distance = Utils.calculateDistance((int) powerXValue, (double) mRsi);
+                    beaconManager.addIBeacon(Utils.bytesToHex(uuid), majorValue, minorValue, (float) distance);
+                }
+            } else {
+                Map<ParcelUuid, byte[]> myMap = mScanRecord.getServiceData();
+                String url = "";
+                byte[] txPower = new byte[1];
+                byte[] nameSpaceId = new byte[10];
+                byte[] instanceId = new byte[6];
+                float distance;
 
-                    for (Map.Entry<ParcelUuid, byte[]> eddystoneFrame : myMap.entrySet()) {
-                        // for eddystone URL
-                        if (eddystoneFrame.getValue()[0] == 16) {
-                            url += urlSchemePrefix[eddystoneFrame.getValue()[2]];
+                for (Map.Entry<ParcelUuid, byte[]> eddystoneFrame : myMap.entrySet()) {
+                    // for eddystone URL
+                    if (eddystoneFrame.getValue()[0] == 16) {
+                        url += urlSchemePrefix[eddystoneFrame.getValue()[2]];
 
-                            for (int i = 3; i < eddystoneFrame.getValue().length - 1; i++) {
-                                url += (char) eddystoneFrame.getValue()[i];
-                            }
-
-                            url += topLevelDomain[eddystoneFrame.getValue()[eddystoneFrame.getValue().length - 1]];
-                            txPower[0] = eddystoneFrame.getValue()[1];
-                            distance = (float) Utils.calculateDistance((int) txPower[0], (double) mRsi);
-
-                            try {
-                                beaconManager.addEddyBeacon(Utils.bytesToHex(nameSpaceId), Utils.bytesToHex(instanceId), distance);
-                            } catch (Exception e) {
-                                Log.e(TAG, e.toString());
-                            }
-
-                        } else if (eddystoneFrame.getValue()[0] == 0) {
-                            // For Eddystone UID
-                            System.arraycopy(eddystoneFrame.getValue(), 2, nameSpaceId, 0, nameSpaceId.length);
-                            System.arraycopy(eddystoneFrame.getValue(), 12, instanceId, 0, instanceId.length);
-                            System.arraycopy(eddystoneFrame.getValue(), 1, txPower, 0, txPower.length);
-
-                            distance = (float) Utils.calculateDistance((int) txPower[0], (double) mRsi);
-
-                            /**  beaconList.add(new String[]{"Name Space ID : " + Utils.bytesToHex(nameSpaceId)+ "\n" + "Instance ID :" + Utils.bytesToHex(instanceId),
-                             String.format("%.2f", distance),
-                             "eddystoneuid"});**/
-                            try {
-                                beaconManager.addEddyBeacon(Utils.bytesToHex(nameSpaceId), Utils.bytesToHex(instanceId), distance);
-                            } catch (Exception e) {
-                                Log.e(TAG, e.toString());
-                            }
-
+                        for (int i = 3; i < eddystoneFrame.getValue().length - 1; i++) {
+                            url += (char) eddystoneFrame.getValue()[i];
                         }
-                        Log.i(TAG, "The size of the frame is: " + eddystoneFrame.getValue().length);
-                    }
 
+                        url += topLevelDomain[eddystoneFrame.getValue()[eddystoneFrame.getValue().length - 1]];
+                        txPower[0] = eddystoneFrame.getValue()[1];
+                        distance = (float) Utils.calculateDistance((int) txPower[0], (double) mRsi);
+
+                        try {
+                            beaconManager.addEddyBeacon(Utils.bytesToHex(nameSpaceId), Utils.bytesToHex(instanceId), distance);
+                        } catch (Exception e) {
+                            Log.e(TAG, e.toString());
+                        }
+
+                    } else if (eddystoneFrame.getValue()[0] == 0) {
+                        // For Eddystone UID
+                        System.arraycopy(eddystoneFrame.getValue(), 2, nameSpaceId, 0, nameSpaceId.length);
+                        System.arraycopy(eddystoneFrame.getValue(), 12, instanceId, 0, instanceId.length);
+                        System.arraycopy(eddystoneFrame.getValue(), 1, txPower, 0, txPower.length);
+
+                        distance = (float) Utils.calculateDistance((int) txPower[0], (double) mRsi);
+
+                        try {
+                            beaconManager.addEddyBeacon(Utils.bytesToHex(nameSpaceId), Utils.bytesToHex(instanceId), distance);
+                        } catch (Exception e) {
+                            Log.e(TAG, e.toString());
+                        }
+                    }
+                    Log.i(TAG, "The size of the frame is: " + eddystoneFrame.getValue().length);
                 }
 
-
-            } catch (Exception e) {
-                Log.e("Error123456789", e.toString());
-                break;
             }
+        } catch (Exception e) {
+            Log.e("Error123456789", e.toString());
         }
+
 
         Beacon b = beaconManager.getNearest();
         if (b != null) {
@@ -142,25 +139,17 @@ public class Scanner extends ScanCallback {
                 myImageView.setVisibility(View.INVISIBLE);
                 myImageView2.setVisibility(View.VISIBLE);
             }
-
         } else {
             myTextView.setText("No beacon detected");
             myImageView.setVisibility(View.INVISIBLE);
             myImageView2.setVisibility(View.INVISIBLE);
         }
-
-    }
-
-    @Override
-    public void onScanResult(int callbackType, ScanResult result) {
-        super.onScanResult(callbackType, result);
-
-        Log.i(TAG, "On result called");
     }
 
     @Override
     public void onScanFailed(int errorCode) {
         super.onScanFailed(errorCode);
         Log.i(TAG, "On scan faild");
+        myTextView.setText("Sorry there is an intern error while scanning :/");
     }
 }

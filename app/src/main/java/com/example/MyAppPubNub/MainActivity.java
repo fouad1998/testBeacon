@@ -47,7 +47,6 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     final static String TAG = "MainActivity";
-    private static final long SCAN_PERIOD = 1000;
     boolean isScanning = false;
     BluetoothAdapter mBluetoothAdapter;
     BluetoothLeScanner mBluetoothLeScanner;
@@ -199,9 +198,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void setScanSettings() {
         ScanSettings.Builder mBuilder = new ScanSettings.Builder();
-        mBuilder.setReportDelay(SCAN_PERIOD);
-        mBuilder.setScanMode(ScanSettings.MATCH_MODE_AGGRESSIVE);
-        mBuilder.setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT);
+        mBuilder.setReportDelay(0).setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).setNumOfMatches(ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
         mScanSettings = mBuilder.build();
     }
 
